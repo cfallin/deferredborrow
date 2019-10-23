@@ -1,5 +1,8 @@
 Some meditations on deferred borrowing.
 
+Main idea: deferred borrowing
+-----------------------------
+
 A Rust borrow is good for three reasons:
 
 1. Safety from dangling references: the lifetime of the borrow is constrained
@@ -30,3 +33,19 @@ By itself, this gives us benefits 1 and 2 (at the time of deferred borrow, we
 just use an actual borrow of the base object), but does not give us a type-safe
 connection between the context and the object that handed it out. For that, we
 need dependent types. (Introduce x:T notation, and desugaring on the trait.)
+
+For further thought / for the writeup
+-------------------------------------
+
+Pointers on the heap are used in a few different ways in languages with no
+aliasing restrictions (C/C++, most GC'd languages):
+
+1. Ownership (downward) relation
+2. Data structure links: up-pointers, neighbor-pointers.
+3. Arbitrary graph from problem domain: DAG, directed graph.
+4. Secondary indices or roots: a worklist of nodes, an index by another key.
+
+Case studies:
+- Dependency graph in a build tool
+- CPU simulator
+- GUI widget toolkit
