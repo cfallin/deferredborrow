@@ -6,6 +6,7 @@ use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::mem;
 use std::ops::{Index, IndexMut};
+use std::slice;
 
 pub struct AppendOnlyVec<T, Tag> {
     v: Vec<T>,
@@ -88,6 +89,17 @@ impl<T, Tag> AppendOnlyVec<T, Tag> {
     pub fn to_vec(self) -> Vec<T> {
         self.v
     }
+
+    pub fn iter<'a>(&'a self) -> slice::Iter<'a, T> {
+        self.v.iter()
+    }
+    pub fn iter_mut<'a>(&'a mut self) -> slice::IterMut<'a, T> {
+        self.v.iter_mut()
+    }
+
+    pub fn elems_deferred(&self) -> Vec<AppendOnlyVecRef<T, Tag>> {
+        (0..self.v.len()).map(|i| self.deferred(i)).collect()
+    }
 }
 
 impl<T, Tag> Index<usize> for AppendOnlyVec<T, Tag> {
@@ -141,6 +153,17 @@ impl<T, Tag> FrozenVec<T, Tag> {
 
     pub fn to_vec(self) -> Vec<T> {
         self.v
+    }
+
+    pub fn iter<'a>(&'a self) -> slice::Iter<'a, T> {
+        self.v.iter()
+    }
+    pub fn iter_mut<'a>(&'a mut self) -> slice::IterMut<'a, T> {
+        self.v.iter_mut()
+    }
+
+    pub fn elems_deferred(&self) -> Vec<FrozenVecRef<T, Tag>> {
+        (0..self.v.len()).map(|i| self.deferred(i)).collect()
     }
 }
 
