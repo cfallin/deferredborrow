@@ -1,16 +1,65 @@
-pub trait DeferredBorrow<'a, Base, T> {
-    /// Carry out the deferred borrow, given the base object we're borrowing from. The lifetime of
-    /// the returned borrow is within (outlived by) the borrows on both `self` (the deferred borrow
-    /// context) and `base` (the base object we're borrowing from). Both of those borrows, in turn,
-    /// are outlived by the lifetime parameter associated with the deferred-borrow type.
-    fn deferred_borrow<'this, 'base, 'ret>(&'this self, base: &'base Base) -> &'ret T
-    where
-        'this: 'ret,
-        'base: 'ret,
-        'a: 'base,
-        'a: 'this;
+pub trait DefBorrow<Base, T> {
+    /// Carry out the deferred borrow, given the base object we're borrowing from.
+    fn def_borrow<'a>(&self, base: &'a Base) -> &'a T;
+ 
+    fn def_borrow_mut<'a>(&self, base: &'a mut Base) -> &'a mut T;
 }
 
-// TODO: mut version.
+pub trait MaybeDefBorrow<Base, T> {
+    fn maybe_def_borrow<'a>(&self, base: &'a Base) -> Option<&'a T>;
 
-// TODO: Option and OptionMut versions.
+    fn maybe_def_borrow_mut<'a>(&self, base: &'a mut Base) -> Option<&'a mut T>;
+}
+
+impl<Base, T, D> MaybeDefBorrow<Base, T> for D
+    where D: DefBorrow<Base, T> {
+
+    fn maybe_def_borrow<'a>(&self, base: &'a Base) -> Option<&'a T> {
+        Some(self.def_borrow(base))
+    }
+
+    fn maybe_def_borrow_mut<'a>(&self, base: &'a mut Base) -> Option<&'a mut T> {
+        Some(self.def_borrow_mut(base))
+    }
+}
+
+#[macro_export]
+macro_rules! freeze {
+    ($t:tt, $e:expr) => ({
+        struct Tag {}
+        $t::<_, Tag>::new($e)
+    });
+}
+
+#[macro_export]
+macro_rules! deferred {
+    ($cont:expr, $($params:expr),*) => ({
+        $cont.deferred($($params),*)
+    });
+
+    (mut $cont:expr, $($params:expr),*) => ({
+        $cont.deferred_mut($($params),*)
+    });
+
+    (option $cont:expr, $($params:expr),*) => ({
+        $cont.maybe_deferred($($params),*)
+    });
+
+    (mut option $cont:expr, $($params:expr),*) => ({
+        $cont.maybe_deferred_mut($($params),*)
+    });
+}
+
+#[macro_export]
+macro_rules! d {
+    ($cont:expr, $e:expr) => (
+        $e.def_borrow(&$cont)
+    );
+}
+
+#[macro_export]
+macro_rules! dmut {
+    ($cont:expr, $e:expr) => (
+        $e.def_borrow_mut(&mut $cont)
+    )
+}

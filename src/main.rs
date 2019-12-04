@@ -1,55 +1,29 @@
 mod lib;
 use lib::*;
 
-// Macros for:
-// - deferred borrow objects of struct fields
-//
-// Impls for:
-// - Vec, HashMap, ... (returning Option<&T> instead? WeakDeferredBorrow? A strong variant that
-// comes from a wrapper around the Vec/HashMap that prevents structural mutation that could
-// invalidate things? NoDropVec, NoDropHashMap. Another wrapper type for Box?)
-//
-// Compiler plugin for:
-// - Generating a thunk around a closure.
-//
-// Type-system extension for:
-// - dependent borrows: for a value y of type x:T, support desugaring y.deref() to
-// y.deferred_borrow(&x).
-//   - dynamic checks (unique ID in obj header and in deferred borrow ctxs?) if not.
-//     perhaps only enable in debug mode.
-//
-// Examples using self.cpus:VecRef (jsim) or self.nodes:NodeRef. In latter case, cite conventional
-// wisdom of using node IDs rather than pointers; note that this is still type-unsafe (index can be
-// used on any vec; vec might be shrunk or reordered). NonShrinkingVec as a wrapper that can give
-// out DeferredBorrows. Same for HashMap, but needs to re-lookup hash. FrozenKeyHashMap can give
-// out actual ptrs inside the contexts.
+mod vec;
+use vec::*;
 
-struct S {
-    pub x: u32,
-    pub y: u32,
-}
-
-struct DeferredBorrowX {}
-struct DeferredBorrowY {}
-
-impl<'a> DeferredBorrow<'a, S, u32> for DeferredBorrowX {
-    fn deferred_borrow<'this, 'base, 'ret>(&'this self, s: &'base S) -> &'ret u32
-    where
-        'a: 'this,
-        'a: 'base,
-        'this: 'ret,
-        'base: 'ret,
-    {
-        &s.x
-    }
+fn f<Tag>(v: &AppendOnlyVec<usize, Tag>, ref1: AppendOnlyVecRef<usize, Tag>) -> usize {
+    *d!(v, ref1)
 }
 
 fn main() {
-    let mut s = S { x: 1, y: 2 };
-    let b = DeferredBorrowX {};
+    let v = vec![1,2,3,4];
+    let w = vec![5,6,7,8];
 
-    s.x = 42;
-    println!("{}", b.deferred_borrow(&s));
-    s.x = 84;
-    println!("{}", b.deferred_borrow(&s));
+    let mut v = freeze!(AppendOnlyVec, v);
+    let mut w = freeze!(AppendOnlyVec, w);
+
+    let ref1 = deferred!(v, 0);
+    let ref2 = deferred!(w, 0);
+
+    println!("ref1 = {}, ref2 = {}", d!(v, ref1), d!(w, ref2));
+    *dmut!(v, ref1) = 10;
+    *dmut!(w, ref2) = 11;
+
+    println!("f(v, ref1) = {}", f(&v, ref1));
+
+    // Should error.
+    //*dmut!(w, ref1) = 12;
 }
