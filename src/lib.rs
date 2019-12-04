@@ -1,3 +1,9 @@
+mod vec;
+pub use vec::*;
+
+mod hashmap;
+pub use hashmap::*;
+
 pub trait DefBorrow<Base, T> {
     /// Carry out the deferred borrow, given the base object we're borrowing from.
     fn def_borrow<'a>(&self, base: &'a Base) -> &'a T;
@@ -27,7 +33,7 @@ impl<Base, T, D> MaybeDefBorrow<Base, T> for D
 macro_rules! freeze {
     ($t:tt, $e:expr) => ({
         struct Tag {}
-        $t::<_, Tag>::new($e)
+        $t::new($e, Tag {})
     });
 }
 
@@ -35,18 +41,6 @@ macro_rules! freeze {
 macro_rules! deferred {
     ($cont:expr, $($params:expr),*) => ({
         $cont.deferred($($params),*)
-    });
-
-    (mut $cont:expr, $($params:expr),*) => ({
-        $cont.deferred_mut($($params),*)
-    });
-
-    (option $cont:expr, $($params:expr),*) => ({
-        $cont.maybe_deferred($($params),*)
-    });
-
-    (mut option $cont:expr, $($params:expr),*) => ({
-        $cont.maybe_deferred_mut($($params),*)
     });
 }
 
