@@ -120,7 +120,7 @@ pub struct FrozenHashMap<K, V, Tag> {
     _tag: PhantomData<Tag>,
 }
 
-#[derive(Copy)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub struct FrozenHashMapRef<K, V, Tag> {
     ptr: *mut V,
     _phantom1: PhantomData<K>,
@@ -136,16 +136,6 @@ where
     }
 }
 impl<K, V, Tag> Eq for FrozenHashMap<K, V, Tag> where HashMap<K, V>: Eq {}
-
-impl<K, V, Tag> Clone for FrozenHashMapRef<K, V, Tag> {
-    fn clone(&self) -> Self {
-        FrozenHashMapRef {
-            ptr: self.ptr,
-            _phantom1: PhantomData,
-            _phantom2: PhantomData,
-        }
-    }
-}
 
 impl<K, V, Tag> FrozenHashMap<K, V, Tag> {
     pub fn new(h: HashMap<K, V>, _tag: Tag) -> FrozenHashMap<K, V, Tag> {

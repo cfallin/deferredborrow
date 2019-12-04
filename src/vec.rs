@@ -118,7 +118,7 @@ pub struct FrozenVec<T, Tag> {
     _tag: PhantomData<Tag>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub struct FrozenVecRef<T, Tag> {
     ptr: *mut T,
     _tag: PhantomData<Tag>,
