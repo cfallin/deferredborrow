@@ -7,7 +7,7 @@ pub use hashmap::*;
 pub trait DefBorrow<Base, T> {
     /// Carry out the deferred borrow, given the base object we're borrowing from.
     fn def_borrow<'a>(&self, base: &'a Base) -> &'a T;
- 
+
     fn def_borrow_mut<'a>(&self, base: &'a mut Base) -> &'a mut T;
 }
 
@@ -18,8 +18,9 @@ pub trait MaybeDefBorrow<Base, T> {
 }
 
 impl<Base, T, D> MaybeDefBorrow<Base, T> for D
-    where D: DefBorrow<Base, T> {
-
+where
+    D: DefBorrow<Base, T>,
+{
     fn maybe_def_borrow<'a>(&self, base: &'a Base) -> Option<&'a T> {
         Some(self.def_borrow(base))
     }
@@ -30,11 +31,20 @@ impl<Base, T, D> MaybeDefBorrow<Base, T> for D
 }
 
 #[macro_export]
+macro_rules! tag {
+    ($t:tt) => {
+        #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+        struct $t {}
+    };
+}
+
+#[macro_export]
 macro_rules! freeze {
-    ($t:tt, $e:expr) => ({
+    ($t:tt, $e:expr) => {{
+        #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
         struct Tag {}
         $t::new($e, Tag {})
-    });
+    }};
 }
 
 #[macro_export]
@@ -46,14 +56,16 @@ macro_rules! deferred {
 
 #[macro_export]
 macro_rules! d {
-    ($cont:expr, $e:expr) => (
-        $e.def_borrow(&$cont)
-    );
+    ($cont:expr, $e:expr) => {{
+        use std::borrow::Borrow;
+        $e.def_borrow($cont.borrow())
+    }};
 }
 
 #[macro_export]
 macro_rules! dmut {
-    ($cont:expr, $e:expr) => (
-        $e.def_borrow_mut(&mut $cont)
-    )
+    ($cont:expr, $e:expr) => {{
+        use std::borrow::BorrowMut;
+        $e.def_borrow_mut($cont.borrow_mut())
+    }};
 }

@@ -130,10 +130,36 @@ pub struct FrozenVec<T, Tag> {
     _tag: PhantomData<Tag>,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub struct FrozenVecRef<T, Tag> {
     ptr: *mut T,
     _tag: PhantomData<Tag>,
+}
+
+impl<T, Tag> Copy for FrozenVecRef<T, Tag> {}
+
+impl<T, Tag> PartialEq for FrozenVecRef<T, Tag> {
+    fn eq(&self, other: &Self) -> bool {
+        self.ptr == other.ptr
+    }
+}
+impl<T, Tag> Eq for FrozenVecRef<T, Tag> {}
+impl<T, Tag> Hash for FrozenVecRef<T, Tag> {
+    fn hash<H: Hasher>(&self, h: &mut H) {
+        self.ptr.hash(h);
+    }
+}
+impl<T, Tag> fmt::Debug for FrozenVecRef<T, Tag> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "FrozenVecRef({:?})", self.ptr)
+    }
+}
+impl<T, Tag> Clone for FrozenVecRef<T, Tag> {
+    fn clone(&self) -> Self {
+        FrozenVecRef {
+            ptr: self.ptr,
+            _tag: PhantomData,
+        }
+    }
 }
 
 impl<T, Tag> FrozenVec<T, Tag> {
